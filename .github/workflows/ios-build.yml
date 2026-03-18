@@ -15,10 +15,13 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
 
     - name: Install dependencies
-      run: npm install
+      run: |
+        rm -rf node_modules package-lock.json
+        npm install
+        chmod +x node_modules/.bin/cap || true
 
     - name: Sync Capacitor
       run: npx cap sync ios
