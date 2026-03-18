@@ -14,12 +14,16 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-body {
+html, body {
+    width: 100%;
+    height: 100%;
+    height: 100dvh; /* dynamic viewport height */
+    overflow: hidden;
+    position: fixed;
+    overscroll-behavior: none;
     font-family: var(--font-family);
     background: var(--bg-base);
     color: var(--text-primary);
-    height: 100dvh; /* dynamic viewport height – crucial on iOS Safari */
-    overflow: hidden;
     display: flex;
 }
 
@@ -35,12 +39,12 @@ button, input, textarea { font-family: inherit; }
    ============================ */
 .mobile-header {
     position: fixed; top: 0; left: 0; right: 0;
-    height: var(--mobile-header-height);
+    min-height: calc(var(--mobile-header-height) + env(safe-area-inset-top, 0px));
     background: var(--bg-base);
     border-bottom: 1px solid var(--border-color);
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 0.75rem;
-    padding-top: env(safe-area-inset-top, 0);
+    padding-top: env(safe-area-inset-top, 0px);
     z-index: 50;
 }
 .mobile-project-name {
@@ -59,7 +63,7 @@ button, input, textarea { font-family: inherit; }
    ============================ */
 .sidebar {
     width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color);
-    display: flex; flex-direction: column; padding: 1rem 0; z-index: 200;
+    display: flex; flex-direction: column; padding: calc(1rem + env(safe-area-inset-top, 0px)) 0 1rem; z-index: 200;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .sidebar-backdrop {
@@ -78,7 +82,7 @@ button, input, textarea { font-family: inherit; }
 }
 .sidebar-header > span { flex: 1; }
 
-.sidebar-menu { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+.sidebar-menu { flex: 1; display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .menu-label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); padding: 0 1rem; margin-bottom: 0.25rem; }
 
 .project-list { list-style: none; display: flex; flex-direction: column; }
@@ -127,7 +131,7 @@ button, input, textarea { font-family: inherit; }
 .panel { display: flex; flex-direction: column; overflow: hidden; }
 .panel-header { padding: 0.5rem 0; margin-bottom: 0.5rem; }
 .panel-header h2 { font-size: 1rem; font-weight: 600; }
-.panel-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.panel-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; -webkit-overflow-scrolling: touch; }
 
 .hint-text { font-size: 0.8rem; color: #6b7280; margin-bottom: 0.5rem; }
 
@@ -167,10 +171,18 @@ button, input, textarea { font-family: inherit; }
 .doc-item .del-doc-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.2rem; flex-shrink: 0; }
 .doc-item .del-doc-btn:hover { color: #ef4444; }
 
+/* REMINDERS */
+.reminders-list { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.5rem; }
+.reminder-item { padding: 0.6rem; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid var(--border-color); font-size: 0.85rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+.reminder-item-info { display: flex; flex-direction: column; gap: 0.2rem; overflow: hidden; color: var(--text-primary); flex: 1; margin-right: 0.5rem; }
+.reminder-date-badge { font-size: 0.7rem; font-weight: 600; color: var(--accent-color); background: #eff6ff; padding: 0.1rem 0.4rem; border-radius: 4px; align-self: flex-start; }
+.reminder-item .del-reminder-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.4rem; flex-shrink: 0; font-size: 1.2rem; }
+.reminder-item .del-reminder-btn:hover { color: #ef4444; }
+
 /* CHAT */
 .chat-panel { border: 1px solid var(--border-color); border-radius: 8px; background: #fff; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
 .chat-panel-header { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); background: #fafafa; border-radius: 8px 8px 0 0; }
-.ai-body { padding: 1rem; background: #fff; overflow-y: auto; }
+.ai-body { padding: 1rem; background: #fff; overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; }
 .chat-history { display: flex; flex-direction: column; gap: 1rem; }
 
 .chat-msg { font-size: 0.9rem; line-height: 1.5; display: flex; flex-direction: column; }
@@ -250,7 +262,7 @@ button, input, textarea { font-family: inherit; }
 @media (max-width: 768px) {
     /* Layout */
     .main-content {
-        padding-top: var(--mobile-header-height);
+        padding-top: calc(var(--mobile-header-height) + env(safe-area-inset-top, 0px));
         padding-bottom: calc(var(--bottom-tabs-height) + var(--safe-bottom));
     }
 
@@ -308,7 +320,7 @@ button, input, textarea { font-family: inherit; }
     }
     .chat-panel.active-tab { display: flex; }
     .chat-panel-header { border-radius: 0; }
-    .ai-body { flex: 1; overflow-y: auto; }
+    .ai-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .chat-footer { border-radius: 0; }
 
     /* Notes grid — 2 columns on mobile */

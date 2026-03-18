@@ -52,6 +52,7 @@ let projects = JSON.parse(localStorage.getItem('ai_projects_v2')) || [];
 let activeProjectId = localStorage.getItem('ai_activeProjectId_v2') || null;
 let geminiApiKey = localStorage.getItem('ai_geminiApiKey_v2') || '';
 let currentEditingNoteId = null;
+let reminders = JSON.parse(localStorage.getItem('ai_reminders_v2')) || [];
 
 // -- DOM Elements --
 const projectListEl = document.getElementById('project-list');
@@ -59,6 +60,15 @@ const emptyStateEl = document.getElementById('empty-state');
 const mainHeaderEl = document.getElementById('main-header');
 const workspaceGridEl = document.getElementById('workspace-grid');
 const currentProjectTitleEl = document.getElementById('current-project-title');
+
+// Calendario UI
+const calendarModal = document.getElementById('calendar-modal');
+const remindersListEl = document.getElementById('reminders-list');
+const newReminderForm = document.getElementById('new-reminder-form');
+const reminderDateInput = document.getElementById('reminder-date');
+const reminderTextInput = document.getElementById('reminder-text');
+const desktopCalendarBtn = document.getElementById('desktop-calendar-btn');
+const mobileCalendarBtn = document.getElementById('mobile-calendar-btn');
 
 // Notas UI
 const notesListView = document.getElementById('notes-list-view');
@@ -125,8 +135,18 @@ function closeSidebar() {
 function init() {
     // Tab switching
     document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (!btn.getAttribute('data-target')) return;
         btn.addEventListener('click', () => setActiveTab(btn.getAttribute('data-target')));
     });
+
+    // Calendario
+    function openCalendar() {
+        calendarModal.classList.add('active');
+        renderReminders();
+    }
+    if (desktopCalendarBtn) desktopCalendarBtn.addEventListener('click', openCalendar);
+    if (mobileCalendarBtn) mobileCalendarBtn.addEventListener('click', openCalendar);
+
     // Hamburger
     document.getElementById('hamburger-btn').addEventListener('click', openSidebar);
     document.getElementById('close-sidebar-btn').addEventListener('click', closeSidebar);
@@ -347,6 +367,59 @@ window.deleteNote = function(event, noteId) {
     }
 }
 
+// -- Recordatorios --
+function saveReminders() {
+    localStorage.setItem('ai_reminders_v2', JSON.stringify(reminders));
+}
+
+function renderReminders() {
+    remindersListEl.innerHTML = '';
+    const sorted = [...reminders].sort((a,b) => new Date(a.date) - new Date(b.date));
+    if (sorted.length === 0) {
+        remindersListEl.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;text-align:center;padding:1rem;">No hay recordatorios.</p>';
+        return;
+    }
+    sorted.forEach(r => {
+        const li = document.createElement('li');
+        li.className = 'reminder-item';
+        
+        const d = new Date(r.date + "T00:00:00");
+        let dateStr = r.date;
+        if (!isNaN(d.getTime())) {
+            dateStr = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+        }
+
+        li.innerHTML = `
+            <div class="reminder-item-info">
+                <span class="reminder-date-badge"><i class='bx bx-calendar-event'></i> ${dateStr}</span>
+                <span>${r.text}</span>
+            </div>
+            <button type="button" class="del-reminder-btn" onclick="deleteReminder('${r.id}')" title="Marcar como hecho / Borrar"><i class='bx bx-check'></i></button>
+        `;
+        remindersListEl.appendChild(li);
+    });
+}
+
+window.deleteReminder = function(id) {
+    reminders = reminders.filter(r => r.id !== id);
+    saveReminders();
+    renderReminders();
+}
+
+if (newReminderForm) {
+    newReminderForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = reminderTextInput.value.trim();
+        const date = reminderDateInput.value;
+        if (text && date) {
+            reminders.push({ id: generateId(), text, date });
+            saveReminders();
+            renderReminders();
+            reminderTextInput.value = '';
+        }
+    });
+}
+
 // -- Documentos --
 uploadBtn.addEventListener('click', () => fileUploadInput.click());
 
@@ -514,6 +587,18 @@ const TOOLS = [{
             parameters: { type: 'OBJECT', properties: {} }
         },
         {
+            name: 'create_reminder',
+            description: 'Crea un nuevo recordatorio global en el calendario para una fecha específica.',
+            parameters: {
+                type: 'OBJECT',
+                properties: {
+                    date: { type: 'STRING', description: 'Fecha del recordatorio en formato ISO YYYY-MM-DD (ej. 2026-03-20)' },
+                    text: { type: 'STRING', description: 'Texto o descripción del recordatorio' }
+                },
+                required: ['date', 'text']
+            }
+        },
+        {
             name: 'search_web',
             description: 'Busca información actualizada en internet sobre cualquier tema. Úsala cuando el usuario pregunte sobre eventos recientes, noticias, datos actuales, precios, clima u otra información que pueda haber cambiado.',
             parameters: {
@@ -609,6 +694,18 @@ async function executeFunctionCall(name, args) {
         return { success: true, note_id: note.id, title: note.title };
     }
 
+    if (name === 'create_reminder') {
+        const newRem = { id: generateId(), text: args.text, date: args.date };
+        reminders.push(newRem);
+        saveReminders();
+        if (calendarModal.classList.contains('active')) renderReminders();
+        appendActionChip(`📅 Recordatorio añadido: ${args.text} (${args.date})`, () => {
+            calendarModal.classList.add('active');
+            renderReminders();
+        });
+        return { success: true, reminder_id: newRem.id };
+    }
+
     return { error: `Función desconocida: ${name}` };
 }
 
@@ -631,14 +728,25 @@ async function buildProjectContextString() {
     if (currentEditingNoteId) saveCurrentNote();
 
     let ctx = `Eres un asistente inteligente integrado en un workspace de proyectos personales.\n`;
+    ctx += `Fecha actual: ${new Date().toLocaleDateString('es-ES')} (${new Date().toISOString().split('T')[0]})\n`;
     ctx += `PROYECTO ACTUAL: "${project.name || 'Sin título'}"\n\n`;
     ctx += `Tienes acceso a las siguientes herramientas:\n`;
     ctx += `- create_note, update_note, list_notes: para gestionar notas del proyecto.\n`;
+    ctx += `- create_reminder: para guardar recordatorios globales en el calendario.\n`;
     ctx += `- search_web: para buscar información ACTUALIZADA en internet (noticias, clima, precios, eventos recientes, etc.).\n\n`;
     ctx += `REGLAS IMPORTANTES:\n`;
     ctx += `- Cuando el usuario pida crear o actualizar una nota, USA las funciones de notas.\n`;
+    ctx += `- Cuando el usuario pida recordar algo o establecer un recordatorio, usa create_reminder y deduce la fecha exacta basándote en la "Fecha actual".\n`;
     ctx += `- Cuando el usuario pregunte sobre información actualizada, reciente o que pueda haber cambiado, USA search_web ANTES de responder.\n`;
-    ctx += `- Puedes combinar herramientas: buscar en internet Y luego crear/actualizar una nota con el resultado.\n\n`;
+    ctx += `- Puedes combinar herramientas: buscar en internet Y luego crear un recordatorio o actualizar una nota con el resultado.\n\n`;
+
+    if (reminders && reminders.length > 0) {
+        ctx += `--- RECORDATORIOS ACTIVOS (CALENDARIO) ---\n`;
+        reminders.forEach(r => {
+            ctx += `- Fecha: ${r.date} | ID: ${r.id} | Descripción: ${r.text}\n`;
+        });
+        ctx += `\n`;
+    }
 
     if (project.notes && project.notes.length > 0) {
         ctx += `--- NOTAS ACTUALES DEL PROYECTO ---\n`;
