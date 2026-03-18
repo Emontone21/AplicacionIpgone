@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="AI Workspace">
+    <title>AI Project Workspace</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- ====== MOBILE HEADER ====== -->
+        <header class="mobile-header" id="mobile-header" style="display:none;">
+            <button id="hamburger-btn" class="hamburger-btn"><i class='bx bx-menu'></i></button>
+            <span id="mobile-project-name" class="mobile-project-name">Workspace</span>
+            <button id="mobile-settings-btn" class="hamburger-btn"><i class='bx bx-cog'></i></button>
+        </header>
+
+        <!-- ====== SIDEBAR DRAWER (desktop + mobile overlay) ====== -->
+        <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>O</h2><span>Workspace</span>
+                <button id="close-sidebar-btn" class="close-sidebar-btn"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="sidebar-menu">
+                <span class="menu-label">MIS PROYECTOS</span>
+                <ul id="project-list" class="project-list"></ul>
+                <button id="add-project-btn" class="add-project-btn">
+                    <i class='bx bx-plus'></i> Añadir página
+                </button>
+            </div>
+            <div class="sidebar-footer">
+                <button id="settings-btn" class="sidebar-item">
+                    <i class='bx bx-cog'></i> Configuración IA
+                </button>
+            </div>
+        </aside>
+
+        <!-- ====== MAIN CONTENT ====== -->
+        <main class="main-content">
+
+            <!-- Desktop header -->
+            <header class="main-header desktop-header" id="main-header" style="display: none;">
+                <h1 id="current-project-title" contenteditable="true">Sin Título</h1>
+            </header>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="empty-state">
+                <div class="empty-state-content">
+                    <div style="font-size: 3rem; margin-bottom: 1rem; color: #9ca3af;"><i class='bx bx-file-blank'></i>
+                    </div>
+                    <p>Selecciona una página o crea una nueva.</p>
+                    <button id="empty-add-project-btn" class="btn-primary" style="margin-top:1.25rem;">
+                        <i class='bx bx-plus'></i> Crear proyecto
+                    </button>
+                </div>
+            </div>
+
+            <!-- Workspace: tabs on mobile, grid on desktop -->
+            <div class="workspace-grid" id="workspace-grid" style="display: none;">
+
+                <!-- PANEL: NOTAS -->
+                <section class="panel notes-panel" data-tab="notes">
+                    <div class="panel-header">
+                        <h2>Notas</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div id="notes-list-view">
+                            <button id="create-note-btn" class="action-btn"><i class='bx bx-plus'></i> Nueva
+                                Nota</button>
+                            <div class="notes-grid" id="notes-grid"></div>
+                        </div>
+                        <div id="note-editor-view" style="display: none;">
+                            <button id="back-to-notes-btn" class="back-btn"><i class='bx bx-chevron-left'></i>
+                                Volver</button>
+                            <input type="text" id="note-title-input" class="note-title-input"
+                                placeholder="Título de la nota" autocomplete="off" />
+                            <textarea id="note-content-area" class="note-content-area"
+                                placeholder="Empieza a escribir..."></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PANEL: ARCHIVOS -->
+                <section class="panel documents-panel" data-tab="files">
+                    <div class="panel-header">
+                        <h2>Archivos</h2>
+                    </div>
+                    <div class="panel-body">
+                        <p class="hint-text">Sube archivos. El texto (.txt, .md, .csv) se agrega al contexto de la IA.
+                        </p>
+                        <input type="file" id="file-upload-input" style="display: none;" />
+                        <button id="upload-btn" class="action-btn block-btn" style="margin-bottom:1rem;"><i
+                                class='bx bx-upload'></i> Subir archivo</button>
+                        <div class="documents-list" id="documents-list"></div>
+                    </div>
+                </section>
+
+                <!-- PANEL: CHAT IA -->
+                <section class="panel chat-panel" data-tab="chat">
+                    <div class="panel-header chat-panel-header">
+                        <h2>Chat IA</h2>
+                    </div>
+                    <div class="panel-body ai-body">
+                        <div class="chat-history" id="chat-history"></div>
+                    </div>
+                    <div class="panel-footer chat-footer">
+                        <form id="chat-form" class="chat-form">
+                            <input type="text" id="chat-input" placeholder="Pregúntale a la IA..." autocomplete="off" />
+                            <button type="submit" class="icon-btn"><i class='bx bx-up-arrow-alt'></i></button>
+                        </form>
+                    </div>
+                </section>
+
+            </div><!-- /workspace-grid -->
+        </main>
+
+        <!-- ====== MOBILE BOTTOM TABS ====== -->
+        <nav class="bottom-tabs" id="bottom-tabs" style="display:none;">
+            <button class="tab-btn active" data-target="notes"><i class='bx bx-notepad'></i><span>Notas</span></button>
+            <button class="tab-btn" data-target="files"><i class='bx bx-folder'></i><span>Archivos</span></button>
+            <button class="tab-btn" data-target="chat"><i class='bx bx-bot'></i><span>Chat IA</span></button>
+        </nav>
+
+    </div><!-- /app-container -->
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="new-project-modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom:1rem;font-size:1.25rem;">Crear nueva página</h2>
+            <form id="new-project-form">
+                <input type="text" id="new-project-name" class="modal-input" placeholder="Nombre de la página" required
+                    autocomplete="off">
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel close-modal-btn"
+                        data-modal="new-project-modal">Cancelar</button>
+                    <button type="submit" class="btn-primary">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="api-key-modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom:1rem;font-size:1.25rem;">Configuración de IA</h2>
+            <p style="color:#6b7280;font-size:0.85rem;margin-bottom:1rem;line-height:1.5;">La IA leerá tus notas y
+                archivos de texto antes de responder.</p>
+            <form id="api-key-form">
+                <label style="font-size:0.85rem;font-weight:500;margin-bottom:0.25rem;display:block;">Gemini API
+                    Key</label>
+                <input type="password" id="api-key-input" class="modal-input" placeholder="AIzaSy..." required
+                    autocomplete="off">
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel close-modal-btn"
+                        data-modal="api-key-modal">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Register Service Worker only on HTTPS (production/Netlify), NOT on localhost
+        if ('serviceWorker' in navigator && location.protocol === 'https:') {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(() => console.log('SW registered'))
+                    .catch(err => console.error('SW error', err));
+            });
+        }
+    </script>
+</body>
+
+</html>

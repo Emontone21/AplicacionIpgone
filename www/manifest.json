@@ -1,0 +1,17 @@
+{
+  "name": "AI Project Workspace",
+  "short_name": "AI Workspace",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
+  "description": "Tu espacio de trabajo local con IA para proyectos personales.",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/8636/8636838.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
